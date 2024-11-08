@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, windows-latest]  # Added Windows to the matrix
+        os: [windows-latest]  # Added Windows to the matrix
 
     env:
       CIBW_SKIP: cp27-* pp*
@@ -75,7 +75,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, windows-latest]  # Added Windows to the matrix
+        os: [windows-latest]  # Added Windows to the matrix
 
     steps:
     - uses: actions/checkout@v4
