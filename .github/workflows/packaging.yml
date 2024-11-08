@@ -29,10 +29,6 @@ jobs:
         copy /Y .\third_party\brotli\*.dll C:\Windows\System32\
 
     steps:
-    - name: Print info
-      run: |
-        ver
-
     - uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
