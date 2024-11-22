@@ -13,54 +13,51 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest]
+        python-version: |
+          3.12
+          3.13
 
     env:
       CIBW_SKIP: cp27-* pp*
-      CIBW_BEFORE_ALL: |
-        # Common setup commands for both OS
-        pip install cmake>=3.5 &&
-        git clone https://github.com/libjxl/libjxl.git --recursive --shallow-submodules &&
-        cd libjxl* &&
-        git checkout v0.10.1 &&
-        mkdir build && cd build &&
-        cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DJPEGXL_ENABLE_BENCHMARK=OFF -DJPEGXL_ENABLE_TOOLS=OFF -DJPEGXL_ENABLE_DEVTOOLS=OFF .. &&
-        cmake --build . --config Release &&
-        cmake --install . --config Release &&
+      CIBW_BEFORE_ALL_WINDOWS: |
+        pip install cmake>=3.5
+        git clone https://github.com/libjxl/libjxl.git --recursive --shallow-submodules
+        cd libjxl*
+        git checkout v0.11.0
+        mkdir build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DJPEGXL_ENABLE_BENCHMARK=OFF -DJPEGXL_ENABLE_TOOLS=OFF -DJPEGXL_ENABLE_DEVTOOLS=OFF ..
+        cmake --build . --config Release
+        cmake --install .
+        copy .\third_party\brotli\*.dll C:\Windows\System32
 
     steps:
-    - uses: actions/checkout@v4.2.2
-
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5.3.0
-      with:
-        python-version: |
-            3.12
-            3.13
-
-    - name: Install vcpkg and Brotli
+    - name: Set environment variables for Windows
+      if: runner.os == 'Windows'
+      run: echo "PATH=C:\Windows\System32;${{ env.PATH }}" >> $GITHUB_ENV
+    - name: Print info
       run: |
-        # Install vcpkg
-        git clone https://github.com/microsoft/vcpkg.git
-        cd vcpkg
-        ./bootstrap-vcpkg.bat
-        # Install Brotli using vcpkg
-        ./vcpkg install brotli
-
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          where cmake
+        fi
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
     - name: Install cibuildwheel
       run: python -m pip install cibuildwheel
-
     - name: Build wheels
       run: python -m cibuildwheel --output-dir wheelhouse
       env:
         CIBW_ARCHS: auto AMD64 ARM64 x86
-
-    - uses: actions/upload-artifact@master
+        CIBW_BEFORE_ALL: ${{ env.CIBW_BEFORE_ALL_WINDOWS }}
+    - uses: actions/upload-artifact@v3
       with:
         name: wheelhouse-${{ matrix.os }}
         path: wheelhouse
-
     - name: Publish package
-      run: python -m pip install twine && python -m twine upload wheelhouse/*
+      run: python -m pip install twine python -m twine upload wheelhouse/*
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.pypi_password }}
@@ -74,39 +71,40 @@ jobs:
         os: [windows-latest]
 
     steps:
-    - uses: actions/checkout@v4.2.2
-
+    - uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v5.3.0
+      uses: actions/setup-python@v5
       with:
         python-version: |
-            3.12
-            3.13
-
-    - name: Install dependencies
+          3.12
+          3.13
+    - name: Install dependencies for Windows
+      if: runner.os == 'Windows'
       run: |
-        pip install cmake>=3.5 &&
-        git clone https://github.com/libjxl/libjxl.git --recursive --shallow-submodules &&
-        cd libjxl* &&
-        git checkout v0.10.1 &&
-        mkdir build && cd build &&
-        cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DJPEGXL_ENABLE_BENCHMARK=OFF -DJPEGXL_ENABLE_TOOLS=OFF -DJPEGXL_ENABLE_DEVTOOLS=OFF .. &&
-        cmake --build . --config Release &&
-        cmake --install . --config Release
-
+        pip install cmake>=3.5
+        git clone https://github.com/libjxl/libjxl.git --recursive --shallow-submodules
+        cd libjxl*
+        git checkout v0.11.0
+        mkdir build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DJPEGXL_ENABLE_BENCHMARK=OFF -DJPEGXL_ENABLE_TOOLS=OFF -DJPEGXL_ENABLE_DEVTOOLS=OFF ..
+        cmake --build . --config Release
+        cmake --install .
+        copy .\third_party\brotli\*.dll C:\Windows\System32
     - name: Install python-build
       run: python -m pip install build
-
     - name: Create packages
       run: python -m build --sdist .
-
-    - uses: actions/upload-artifact@master
+    - uses: actions/upload-artifact@v3
       with:
         name: dist
         path: dist
 
-    - name: Publish package
-      uses: pypa/gh-action-pypi-publish@master
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2.1.0
       with:
-        user: __token__
-        password: ${{ secrets.pypi_password }}
+        files: |
+          wheels/**/*
+          dist/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
