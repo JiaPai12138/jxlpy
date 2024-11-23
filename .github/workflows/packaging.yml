@@ -13,9 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest]
-        python-version: |
-          3.12
-          3.13
+        python-version: ['3.12', '3.13']
 
     env:
       CIBW_SKIP: cp27-* pp*
@@ -75,9 +73,8 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: |
-          3.12
-          3.13
+        python-version: ['3.12', '3.13']
+
     - name: Install dependencies for Windows
       if: runner.os == 'Windows'
       run: |
