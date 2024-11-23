@@ -35,7 +35,7 @@ jobs:
       run: echo "PATH=C:\Windows\System32;${{ env.PATH }}" >> $GITHUB_ENV
     - name: Print info
       run: |
-        if [ "$RUNNER_OS" == "Windows" ]; then
+        if ( "$RUNNER_OS" == "Windows" ); then
           where cmake
         fi
     - uses: actions/checkout@v4
@@ -102,6 +102,10 @@ jobs:
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2.1.0
       with:
+        tag_name: ${{ github.run_number }}
+        name: Release ${{ github.run_number }}
+        draft: false
+        prerelease: false
         files: |
           wheels/**/*
           dist/*
