@@ -33,11 +33,6 @@ jobs:
     - name: Set environment variables for Windows
       if: runner.os == 'Windows'
       run: echo "PATH=C:\Windows\System32;${{ env.PATH }}" >> $GITHUB_ENV
-    - name: Print info
-      run: |
-        if ( "$RUNNER_OS" == "Windows" ); then
-          where cmake
-        fi
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
